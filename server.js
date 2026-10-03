@@ -31,7 +31,7 @@ app.post('/api/criar-pix', async (req, res) => {
       });
     }
 
-    const cobrancaResponse = await axios.post(
+        const cobrancaResponse = await axios.post(
       `${ASAAS_API_URL}/payments`,
       {
         customer: process.env.ASAAS_CUSTOMER_ID || 'cus_000006028080',
@@ -44,6 +44,7 @@ app.post('/api/criar-pix', async (req, res) => {
         headers: { access_token: ASAAS_API_KEY }
       }
     );
+
 
     const paymentId = cobrancaResponse.data.id;
 
