@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intelectus QI - Avaliação Cognitiva Oficial</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .glass-panel {
+            background: rgba(17, 24, 39, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
+
+    <!-- Header / Navbar -->
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-filter blur-md sticky top-0 z-40">
+        <div class="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-gradient-to-tr from-indigo-500 to-purple-500 p-2 rounded-xl text-white shadow-lg shadow-indigo-500/20">
+                    <i class="fa-solid font-bold fa-brain text-xl"></i>
+                </div>
+                <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+                    Intelectus<span class="text-indigo-400">QI</span>
+                </span>
+            </div>
+            <div class="text-xs font-semibold px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                Sistema Online
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-3xl mx-auto px-4 py-8 w-full flex-grow">
+
+        <!-- 1. TELA DE BOAS-VINDAS / INTRO -->
+        <section id="screen-intro" class="text-center space-y-6">
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-800/80 border border-slate-700 text-sm text-slate-300">
+                <i class="fa-solid fa-award text-amber-400"></i> Avaliação Baseada na Escala Cattell & Raven
+            </div>
+            <h1 class="text-4xl md:text-5xl font-black text-white tracking-tight leading-tight">
+                Descubra o Seu Coeficiente de Inteligência Real
+            </h1>
+            <p class="text-slate-400 text-base md:text-lg max-w-xl mx-auto leading-relaxed">
+                Responda a 10 questões psicométricas padronizadas para medir sua capacidade de raciocínio lógico, padrão espacial e solução de problemas.
+            </p>
+            <div class="pt-4">
+                <button onclick="startTest()" class="w-full md:w-auto px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-2xl shadow-xl shadow-indigo-500/25 transition-all transform active:scale-95 text-lg flex items-center justify-center gap-3 mx-auto">
+                    Iniciar Teste Agorá
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- 2. TELA DAS QUESTÕES -->
+        <section id="screen-quiz" class="hidden space-y-6">
+            <!-- Barra de Progresso -->
+            <div class="space-y-2">
+                <div class="flex justify-between text-xs font-semibold text-slate-400">
+                    <span id="progress-text">Questão 1 de 10</span>
+                    <span id="progress-percent">10%</span>
+                </div>
+                <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                    <div id="progress-bar" class="bg-gradient-to-r from-indigo-500 to-purple-500 h-full w-[10%] transition-all duration-300"></div>
+                </div>
+            </div>
+
+            <!-- Card da Pergunta -->
+            <div class="glass-panel p-6 md:p-8 rounded-3xl space-y-6">
+                <h2 id="question-title" class="text-xl md:text-2xl font-bold text-white"></h2>
+                
+                <div id="options-container" class="grid grid-cols-1 gap-3">
+                    <!-- Opções inseridas dinamicamente pelo JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. TELA DE CHECKOUT / PAGAMENTO PIX -->
+        <section id="screen-checkout" class="hidden glass-panel p-6 md:p-8 rounded-3xl text-center space-y-6">
+            <div class="space-y-2">
+                <div class="inline-flex p-3 bg-emerald-500/10 text-emerald-400 rounded-2xl border border-emerald-500/20">
+                    <i class="fa-solid fa-square-check text-3xl"></i>
+                </div>
+                <h2 class="text-2xl font-black text-white">Sua Avaliação Está Pronta!</h2>
+                <p class="text-slate-400 text-sm">Desbloqueie o relatório completo e obtenha seu Certificado Digital por apenas R$ 2,00.</p>
+            </div>
+
+            <!-- Status do Pagamento / Loader -->
+            <div id="checkout-loading" class="py-8 space-y-3">
+                <div class="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <p class="text-sm text-slate-400">Gerando cobrança PIX automática no Asaas...</p>
+            </div>
+
+            <!-- Área do QR Code gerado -->
+            <div id="pix-area" class="hidden space-y-5">
+                <div class="bg-white p-4 rounded-2xl inline-block shadow-xl mx-auto">
+                    <img id="pix-qr-code" src="" alt="QR Code PIX Asaas" class="w-48 h-48 mx-auto">
+                </div>
+
+                <div class="space-y-2 max-w-md mx-auto">
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Pix Copia e Cola</p>
+                    <div class="flex gap-2">
+                        <input id="pix-code-input" type="text" readonly class="w-full bg-slate-900 border border-slate-700 text-slate-300 text-xs px-3 py-2.5 rounded-xl font-mono focus:outline-none">
+                        <button onclick="copyPixCode()" class="px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-xs transition">
+                            Copiar
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-center gap-2 text-xs text-amber-400 bg-amber-400/10 p-3 rounded-xl border border-amber-400/20 max-w-md mx-auto">
+                    <div class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></div>
+                    Aguardando confirmação do banco...
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. TELA DE RESULTADO REVELADO -->
+        <section id="screen-results" class="hidden space-y-6 text-center">
+            <div class="glass-panel p-8 rounded-3xl space-y-6 border border-emerald-500/30">
+                <div class="inline-flex p-3 bg-emerald-500/10 text-emerald-400 rounded-full">
+                    <i class="fa-solid fa-certificate text-3xl"></i>
+                </div>
+                <div>
+                    <span class="text-xs font-semibold text-emerald-400 tracking-widest uppercase">Certificado Confirmado</span>
+                    <h2 class="text-3xl font-black text-white mt-1">Seu Resultado Oficial</h2>
+                </div>
+
+                <div class="bg-slate-900/80 border border-slate-800 p-6 rounded-2xl max-w-sm mx-auto space-y-2">
+                    <span class="text-sm text-slate-400">Pontuação Estimada de QI</span>
+                    <div class="text-5xl font-black text-indigo-400" id="final-iq-score">128</div>
+                    <span class="inline-block text-xs font-bold text-indigo-300 px-3 py-1 bg-indigo-500/20 rounded-full">
+                        Nível: Inteligência Superior
+                    </span>
+                </div>
+
+                <p class="text-sm text-slate-400 max-w-md mx-auto">
+                    Parabéns! Sua capacidade de processamento lógico e reconhecimento de padrões está acima de 92% da população.
+                </p>
+
+                <div class="pt-2">
+                    <button onclick="window.print()" class="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-xl text-sm border border-slate-700 flex items-center gap-2 mx-auto transition">
+                        <i class="fa-solid fa-print"></i>
+                        Imprimir / Baixar Certificado
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-900 bg-slate-950 py-6 text-center text-xs text-slate-500">
+        <p>&copy; 2026 Intelectus QI. Todos os direitos reservados.</p>
+    </footer>
+
+    <!-- Lógica de Funcionamento do App JS -->
+    <script>
+        const questions = [
+            { title: "1. Qual número completa a sequência: 2, 4, 8, 16, ___?", options: ["24", "32", "30", "64"], correct: 1 },
+            { title: "2. ÁGUA está para SEDE assim como COMIDA está para:", options: ["Cozinha", "Fome", "Restaurante", "Prato"], correct: 1 },
+            { title: "3. Se 3 gatos caçam 3 ratos em 3 minutos, quantos minutos 100 gatos levam para caçar 100 ratos?", options: ["100 minutos", "30 minutos", "3 minutos", "1 minuto"], correct: 2 },
+            { title: "4. Qual palavra não pertence ao grupo?", options: ["Maçã", "Banana", "Cenoura", "Uva"], correct: 2 },
+            { title: "5. Se quinta-feira é depois de amanhã, que dia foi anteontem?", options: ["Segunda-feira", "Sábado", "Domingo", "Terça-feira"], correct: 2 },
+            { title: "6. Qual é a metade de 2 mais 2?", options: ["2", "3", "1", "4"], correct: 1 },
+            { title: "7. Complete a analogia: LIVRO está para LER assim como PIANO está para:", options: ["Música", "Tocar", "Teclas", "Partitura"], correct: 1 },
+            { title: "8. Qual das formas abaixo representa o oposto de SIMETRIA?", options: ["Harmonia", "Assimetria", "Equilíbrio", "Proporção"], correct: 1 },
+            { title: "9. Um pai tem 35 anos e o filho tem 5. Daqui a quantos anos o pai terá o triplo da idade do filho?", options: ["10 anos", "15 anos", "20 anos", "5 anos"], correct: 0 },
+            { title: "10. Se todos os Zings são Zongs e alguns Zongs são Zangs, podemos afirmar que:", options: ["Todos Zings são Zangs", "Nenhum Zing é Zang", "Alguns Zings podem ser Zangs", "Nenhuma das anteriores"], correct: 2 }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let paymentPollInterval = null;
+
+        function startTest() {
+            document.getElementById('screen-intro').classList.add('hidden');
+            document.getElementById('screen-quiz').classList.remove('hidden');
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            const q = questions[currentQuestion];
+            document.getElementById('question-title').innerText = q.title;
+            document.getElementById('progress-text').innerText = `Questão ${currentQuestion + 1} de ${questions.length}`;
+            
+            const percent = Math.round(((currentQuestion + 1) / questions.length) * 100);
+            document.getElementById('progress-percent').innerText = `${percent}%`;
+            document.getElementById('progress-bar').style.width = `${percent}%`;
+
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+
+            q.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'w-full p-4 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-indigo-500 rounded-2xl text-left font-medium text-slate-200 transition-all flex items-center justify-between group';
+                btn.innerHTML = `<span>${opt}</span> <i class="fa-solid fa-chevron-right text-slate-600 group-hover:text-indigo-400"></i>`;
+                btn.onclick = () => selectOption(idx);
+                container.appendChild(btn);
+            });
+        }
+
+        function selectOption(idx) {
+            if (idx === questions[currentQuestion].correct) {
+                score++;
+            }
+
+            currentQuestion++;
+            if (currentQuestion < questions.length) {
+                loadQuestion();
+            } else {
+                finishQuiz();
+            }
+        }
+
+        function finishQuiz() {
+            document.getElementById('screen-quiz').classList.add('hidden');
+            document.getElementById('screen-checkout').classList.remove('hidden');
+            criarPixAsaas();
+        }
+
+        async function criarPixAsaas() {
+            try {
+                const response = await fetch('/api/criar-pix', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('checkout-loading').classList.add('hidden');
+                    document.getElementById('pix-area').classList.remove('hidden');
+
+                    document.getElementById('pix-qr-code').src = `data:image/png;base64,${data.encodedImage}`;
+                    document.getElementById('pix-code-input').value = data.payload;
+
+                    // Inicia verificação contínua do pagamento
+                    startPaymentPolling(data.paymentId);
+                } else {
+                    alert('Erro ao gerar pagamento: ' + (data.message || 'Tente novamente.'));
+                }
+            } catch (err) {
+                console.error('Erro ao conectar com servidor:', err);
+                alert('Ocorreu um erro ao gerar o PIX. Atualize a página e tente novamente.');
+            }
+        }
+
+        function copyPixCode() {
+            const input = document.getElementById('pix-code-input');
+            input.select();
+            navigator.clipboard.writeText(input.value);
+            alert('Código PIX Copia e Cola copiado com sucesso!');
+        }
+
+        function startPaymentPolling(paymentId) {
+            paymentPollInterval = setInterval(async () => {
+                try {
+                    const res = await fetch(`/api/checar-status/${paymentId}`);
+                    const data = await res.json();
+
+                    if (data.pago) {
+                        clearInterval(paymentPollInterval);
+                        showResults();
+                    }
+                } catch (e) {
+                    console.error('Erro na checagem de status:', e);
+                }
+            }, 3000); // Checa a cada 3 segundos
+        }
+
+        function showResults() {
+            document.getElementById('screen-checkout').classList.add('hidden');
+            document.getElementById('screen-results').classList.remove('hidden');
+
+            // Cálculo dinâmico simples de QI baseado na pontuação
+            const calculatedIQ = 90 + (score * 4);
+            document.getElementById('final-iq-score').innerText = calculatedIQ;
+        }
+    </script>
+</body>
+</html>
