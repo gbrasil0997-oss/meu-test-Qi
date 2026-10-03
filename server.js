@@ -107,3 +107,18 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Servidor a rodar na porta ${PORT}`);
 });
+const fs = require('fs');
+
+// Rota para servir a página inicial inteligente
+app.get('*', (req, res) => {
+  const publicPath = path.join(__dirname, 'public', 'index.html');
+  const rootPath = path.join(__dirname, 'index.html');
+
+  if (fs.existsSync(publicPath)) {
+    res.sendFile(publicPath);
+  } else if (fs.existsSync(rootPath)) {
+    res.sendFile(rootPath);
+  } else {
+    res.status(404).send('Arquivo index.html não encontrado. Verifique a pasta public no GitHub.');
+  }
+});
