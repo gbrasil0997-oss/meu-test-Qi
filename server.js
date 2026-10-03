@@ -8,14 +8,14 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Serve os arquivos estáticos do front-end da pasta public
+// Servir ficheiros estáticos da pasta public
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Configurações do Asaas
 const ASAAS_API_URL = process.env.ASAAS_API_URL || 'https://www.asaas.com/api/v3';
-const ASAAS_API_KEY = process.env.ASAAS_API_KEY; // Será configurada nas variáveis de ambiente
+const ASAAS_API_KEY = process.env.ASAAS_API_KEY;
 
-// Armazenamento em memória do status dos pagamentos
+// Armazenamento temporário do estado dos pagamentos
 const cobrancasStatus = {};
 
 // 1. ENDPOINT: Criar cobrança PIX no Asaas (R$ 2,00)
@@ -73,7 +73,7 @@ app.post('/api/criar-pix', async (req, res) => {
   }
 });
 
-// 2. WEBHOOK: Recebe o aviso de pagamento confirmado direto do Asaas
+// 2. WEBHOOK: Recebe a notificação de pagamento confirmado direto do Asaas
 app.post('/api/webhook-asaas', (req, res) => {
   const { event, payment } = req.body;
 
@@ -98,21 +98,12 @@ app.get('/api/checar-status/:paymentId', (req, res) => {
   });
 });
 
-// Rota padrão para entregar a página inicial
+// Entregar a página inicial index.html para qualquer outra rota
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
-});
-const path = require('path');
-
-// Servir os ficheiros estáticos da pasta public
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Entregar o index.html
-app.get('*', (req, res) => {
-  res.sendFile(path.resolve(__dirname, 'public', 'index.html'));
+  console.log(`Servidor a rodar na porta ${PORT}`);
 });
