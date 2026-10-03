@@ -21,7 +21,7 @@ const ASAAS_API_KEY = process.env.ASAAS_API_KEY;
 // Armazenamento em memória do status dos pagamentos
 const cobrancasStatus = {};
 
-// 1. ENDPOINT: Criar cobrança PIX no Asaas (R$ 2,00)
+// 1. ENDPOINT: Criar cobrança PIX no Asaas (com criação automática de cliente)
 app.post('/api/criar-pix', async (req, res) => {
   try {
     if (!ASAAS_API_KEY) {
@@ -31,10 +31,25 @@ app.post('/api/criar-pix', async (req, res) => {
       });
     }
 
-        const cobrancaResponse = await axios.post(
+    // 1. Criar um cliente temporário no Asaas
+    const customerResponse = await axios.post(
+      `${ASAAS_API_URL}/customers`,
+      {
+        name: 'Cliente Intelectus QI',
+        email: 'cliente@intelectusqi.com'
+      },
+      {
+        headers: { access_token: ASAAS_API_KEY }
+      }
+    );
+
+    const customerId = customerResponse.data.id;
+
+    // 2. Criar a cobrança associada a esse cliente
+    const cobrancaResponse = await axios.post(
       `${ASAAS_API_URL}/payments`,
       {
-        customer: process.env.ASAAS_CUSTOMER_ID || 'cus_000006028080',
+        customer: customerId,
         billingType: 'PIX',
         value: 2.00,
         dueDate: new Date(Date.now() + 86400000).toISOString().split('T')[0],
@@ -44,6 +59,37 @@ app.post('/api/criar-pix', async (req, res) => {
         headers: { access_token: ASAAS_API_KEY }
       }
     );
+
+    const paymentId = cobrancaResponse.data.id;
+
+    // 3. Buscar o QR Code e Payload Copia e Cola
+    const qrCodeResponse = await axios.get(
+      `${ASAAS_API_URL}/payments/${paymentId}/pixQrCode`,
+      {
+        headers: { access_token: ASAAS_API_KEY }
+      }
+    );
+
+    cobrancasStatus[paymentId] = 'PENDING';
+
+    res.json({
+      success: true,
+      paymentId: paymentId,
+      encodedImage: qrCodeResponse.data.encodedImage,
+      payload: qrCodeResponse.data.payload,
+      expirationDate: qrCodeResponse.data.expirationDate
+    });
+
+  } catch (error) {
+    console.error('Erro Asaas detalhado:', error.response?.data || error.message);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erro ao gerar PIX no Asaas.',
+      details: error.response?.data?.errors?.[0]?.description || error.message
+    });
+  }
+});
+
 
 
     const paymentId = cobrancaResponse.data.id;
