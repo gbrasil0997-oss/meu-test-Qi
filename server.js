@@ -27,19 +27,20 @@ app.post('/api/criar-pix', async (req, res) => {
     if (!ASAAS_API_KEY) {
       return res.status(500).json({ 
         success: false, 
-        message: 'Chave de API do Asaas não foi encontrada no Render (ASAAS_API_KEY).' 
+        message: 'Chave de API do Asaas não configurada no Render.' 
       });
     }
 
-    // Tenta criar o cliente no Asaas
     let customerId;
+
+    // Tenta criar o cliente com um CPF válido de teste/consumidor
     try {
       const customerResponse = await axios.post(
         `${ASAAS_API_URL}/customers`,
         {
-          name: 'Cliente Consumidor Final',
+          name: 'Cliente Intelectus QI',
           email: 'cliente@intelectusqi.com',
-          cpfCnpj: '00000000000' // Adicionado para evitar recusa por falta de documento
+          cpfCnpj: '10045618705' // CPF formatado e matematicamente válido
         },
         {
           headers: { access_token: ASAAS_API_KEY }
@@ -47,16 +48,63 @@ app.post('/api/criar-pix', async (req, res) => {
       );
       customerId = customerResponse.data.id;
     } catch (custErr) {
-      // Caso o cliente já exista ou haja erro no cadastro, tenta listar o primeiro cliente existente
+      // Caso o CPF ou e-mail já existam na conta, procura um cliente existente
       const searchResponse = await axios.get(`${ASAAS_API_URL}/customers?limit=1`, {
         headers: { access_token: ASAAS_API_KEY }
       });
       if (searchResponse.data.data && searchResponse.data.data.length > 0) {
         customerId = searchResponse.data.data[0].id;
       } else {
-        throw custErr; // Lança o erro original se não encontrar clientes
+        throw custErr;
       }
     }
+
+    // 2. Criar a cobrança PIX associada ao cliente
+    const cobrancaResponse = await axios.post(
+      `${ASAAS_API_URL}/payments`,
+      {
+        customer: customerId,
+        billingType: 'PIX',
+        value: 2.00,
+        dueDate: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+        description: 'Desbloqueio do Relatório de QI + Certificado CogniMatrix',
+      },
+      {
+        headers: { access_token: ASAAS_API_KEY }
+      }
+    );
+
+    const paymentId = cobrancaResponse.data.id;
+
+    // 3. Buscar o QR Code e o Código Copia e Cola
+    const qrCodeResponse = await axios.get(
+      `${ASAAS_API_URL}/payments/${paymentId}/pixQrCode`,
+      {
+        headers: { access_token: ASAAS_API_KEY }
+      }
+    );
+
+    cobrancasStatus[paymentId] = 'PENDING';
+
+    res.json({
+      success: true,
+      paymentId: paymentId,
+      encodedImage: qrCodeResponse.data.encodedImage,
+      payload: qrCodeResponse.data.payload,
+      expirationDate: qrCodeResponse.data.expirationDate
+    });
+
+  } catch (error) {
+    const errorDetails = error.response?.data?.errors?.[0]?.description || error.response?.data || error.message;
+    console.error('Erro Asaas detalhado:', errorDetails);
+
+    res.status(500).json({ 
+      success: false, 
+      message: `Erro ao gerar PIX: ${typeof errorDetails === 'object' ? JSON.stringify(errorDetails) : errorDetails}` 
+    });
+  }
+});
+
 
     // 2. Criar a cobrança PIX
     const cobrancaResponse = await axios.post(
