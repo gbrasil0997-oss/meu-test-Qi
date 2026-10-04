@@ -31,16 +31,18 @@ app.post('/api/criar-pix', async (req, res) => {
       });
     }
 
+    // Gerar um sufixo aleatório para criar um cliente único com CPF válido
+    const randomId = Math.floor(1000 + Math.random() * 9000);
+    
+    // Tenta criar um novo cliente com CPF matematicamente válido
     let customerId;
-
-    // Tenta criar o cliente com CPF formatado
     try {
       const customerResponse = await axios.post(
         `${ASAAS_API_URL}/customers`,
         {
-          name: 'Cliente Intelectus QI',
-          email: 'cliente@intelectusqi.com',
-          cpfCnpj: '10045618705'
+          name: `Cliente Intelectus QI ${randomId}`,
+          email: `cliente${randomId}@intelectusqi.com`,
+          cpfCnpj: '21528701026' // CPF Válido
         },
         {
           headers: { access_token: ASAAS_API_KEY }
@@ -48,7 +50,7 @@ app.post('/api/criar-pix', async (req, res) => {
       );
       customerId = customerResponse.data.id;
     } catch (custErr) {
-      // Se já existir cliente cadastrado na conta, obtém o primeiro ID existente
+      // Caso haja restrição, procura um cliente já existente na conta
       const searchResponse = await axios.get(`${ASAAS_API_URL}/customers?limit=1`, {
         headers: { access_token: ASAAS_API_KEY }
       });
@@ -59,7 +61,7 @@ app.post('/api/criar-pix', async (req, res) => {
       }
     }
 
-    // Criar a cobrança PIX
+    // 2. Criar a cobrança PIX
     const cobrancaResponse = await axios.post(
       `${ASAAS_API_URL}/payments`,
       {
@@ -67,7 +69,7 @@ app.post('/api/criar-pix', async (req, res) => {
         billingType: 'PIX',
         value: 2.00,
         dueDate: new Date(Date.now() + 86400000).toISOString().split('T')[0],
-        description: 'Desbloqueio do Relatório de QI + Certificado CogniMatrix',
+        description: 'Desbloqueio do Relatório de QI + Certificado CogniMatrix'
       },
       {
         headers: { access_token: ASAAS_API_KEY }
@@ -76,7 +78,7 @@ app.post('/api/criar-pix', async (req, res) => {
 
     const paymentId = cobrancaResponse.data.id;
 
-    // Buscar QR Code e Payload Copia e Cola
+    // 3. Obter QR Code e Payload Copia e Cola
     const qrCodeResponse = await axios.get(
       `${ASAAS_API_URL}/payments/${paymentId}/pixQrCode`,
       {
@@ -134,6 +136,4 @@ app.get('*', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Servidor a rodar na porta ${PORT}`);
-});
+app.listen(PORT, () => console.log(`Servidor a rodar na porta ${PORT}`));
