@@ -33,14 +33,14 @@ app.post('/api/criar-pix', async (req, res) => {
 
     let customerId;
 
-    // Tenta criar o cliente com um CPF válido de teste/consumidor
+    // Tenta criar o cliente com CPF formatado
     try {
       const customerResponse = await axios.post(
         `${ASAAS_API_URL}/customers`,
         {
           name: 'Cliente Intelectus QI',
           email: 'cliente@intelectusqi.com',
-          cpfCnpj: '10045618705' // CPF formatado e matematicamente válido
+          cpfCnpj: '10045618705'
         },
         {
           headers: { access_token: ASAAS_API_KEY }
@@ -48,7 +48,7 @@ app.post('/api/criar-pix', async (req, res) => {
       );
       customerId = customerResponse.data.id;
     } catch (custErr) {
-      // Caso o CPF ou e-mail já existam na conta, procura um cliente existente
+      // Se já existir cliente cadastrado na conta, obtém o primeiro ID existente
       const searchResponse = await axios.get(`${ASAAS_API_URL}/customers?limit=1`, {
         headers: { access_token: ASAAS_API_KEY }
       });
@@ -59,7 +59,7 @@ app.post('/api/criar-pix', async (req, res) => {
       }
     }
 
-    // 2. Criar a cobrança PIX associada ao cliente
+    // Criar a cobrança PIX
     const cobrancaResponse = await axios.post(
       `${ASAAS_API_URL}/payments`,
       {
@@ -76,7 +76,7 @@ app.post('/api/criar-pix', async (req, res) => {
 
     const paymentId = cobrancaResponse.data.id;
 
-    // 3. Buscar o QR Code e o Código Copia e Cola
+    // Buscar QR Code e Payload Copia e Cola
     const qrCodeResponse = await axios.get(
       `${ASAAS_API_URL}/payments/${paymentId}/pixQrCode`,
       {
@@ -105,55 +105,7 @@ app.post('/api/criar-pix', async (req, res) => {
   }
 });
 
-
-    // 2. Criar a cobrança PIX
-    const cobrancaResponse = await axios.post(
-      `${ASAAS_API_URL}/payments`,
-      {
-        customer: customerId,
-        billingType: 'PIX',
-        value: 2.00,
-        dueDate: new Date(Date.now() + 86400000).toISOString().split('T')[0],
-        description: 'Desbloqueio do Relatório de QI + Certificado CogniMatrix',
-      },
-      {
-        headers: { access_token: ASAAS_API_KEY }
-      }
-    );
-
-    const paymentId = cobrancaResponse.data.id;
-
-    // 3. Obter QR Code
-    const qrCodeResponse = await axios.get(
-      `${ASAAS_API_URL}/payments/${paymentId}/pixQrCode`,
-      {
-        headers: { access_token: ASAAS_API_KEY }
-      }
-    );
-
-    cobrancasStatus[paymentId] = 'PENDING';
-
-    res.json({
-      success: true,
-      paymentId: paymentId,
-      encodedImage: qrCodeResponse.data.encodedImage,
-      payload: qrCodeResponse.data.payload,
-      expirationDate: qrCodeResponse.data.expirationDate
-    });
-
-  } catch (error) {
-    const errorDetails = error.response?.data?.errors?.[0]?.description || error.response?.data || error.message;
-    console.error('Erro Asaas detalhado:', errorDetails);
-
-    // Retorna a mensagem exata do erro na janela do site
-    res.status(500).json({ 
-      success: false, 
-      message: `Asaas Recusou: ${JSON.stringify(errorDetails)}` 
-    });
-  }
-});
-
-// 2. WEBHOOK: Recebe confirmação
+// 2. WEBHOOK: Confirmar pagamento
 app.post('/api/webhook-asaas', (req, res) => {
   const { event, payment } = req.body;
   if (event === 'PAYMENT_RECEIVED' || event === 'PAYMENT_CONFIRMED') {
@@ -171,15 +123,17 @@ app.get('/api/checar-status/:paymentId', (req, res) => {
   res.json({ paymentId, pago: status === 'RECEIVED' });
 });
 
-// 4. ROTA PRINCIPAL
+// 4. ROTA PRINCIPAL: Entrega o index.html
 app.get('*', (req, res) => {
   const indexPath = path.resolve(__dirname, 'public', 'index.html');
   if (fs.existsSync(indexPath)) {
     res.sendFile(indexPath);
   } else {
-    res.status(404).send('Ficheiro index.html não foi encontrado.');
+    res.status(404).send('Ficheiro index.html não foi encontrado na pasta public.');
   }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Servidor na porta ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Servidor a rodar na porta ${PORT}`);
+});
