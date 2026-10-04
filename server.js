@@ -63,13 +63,13 @@ app.post('/api/criar-pix', async (req, res) => {
 
     const customerId = customerResponse.data.id;
 
-    // 2. Criar a cobrança PIX
+        // 2. Criar a cobrança PIX (valor mínimo exigido pelo Asaas é R$ 5,00)
     const cobrancaResponse = await axios.post(
       `${ASAAS_API_URL}/payments`,
       {
         customer: customerId,
         billingType: 'PIX',
-        value: 2.00,
+        value: 5.00, // Ajustado de 2.00 para 5.00
         dueDate: new Date(Date.now() + 86400000).toISOString().split('T')[0],
         description: 'Desbloqueio do Relatório de QI + Certificado CogniMatrix'
       },
@@ -77,6 +77,7 @@ app.post('/api/criar-pix', async (req, res) => {
         headers: { access_token: ASAAS_API_KEY }
       }
     );
+
 
     const paymentId = cobrancaResponse.data.id;
 
