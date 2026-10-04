@@ -21,6 +21,20 @@ const ASAAS_API_KEY = process.env.ASAAS_API_KEY;
 // Armazenamento em memória do status dos pagamentos
 const cobrancasStatus = {};
 
+// Função auxiliar para gerar CPF matematicamente válido
+function gerarCPFValido() {
+  const rand = () => Math.floor(Math.random() * 9);
+  const n = Array.from({ length: 9 }, rand);
+
+  let d1 = n.reduce((acc, curr, idx) => acc + curr * (10 - idx), 0) % 11;
+  d1 = d1 < 2 ? 0 : 11 - d1;
+
+  let d2 = [...n, d1].reduce((acc, curr, idx) => acc + curr * (11 - idx), 0) % 11;
+  d2 = d2 < 2 ? 0 : 11 - d2;
+
+  return [...n, d1, d2].join('');
+}
+
 // 1. ENDPOINT: Criar cobrança PIX no Asaas
 app.post('/api/criar-pix', async (req, res) => {
   try {
@@ -31,35 +45,23 @@ app.post('/api/criar-pix', async (req, res) => {
       });
     }
 
-    // Gerar um sufixo aleatório para criar um cliente único com CPF válido
-    const randomId = Math.floor(1000 + Math.random() * 9000);
-    
-    // Tenta criar um novo cliente com CPF matematicamente válido
-    let customerId;
-    try {
-      const customerResponse = await axios.post(
-        `${ASAAS_API_URL}/customers`,
-        {
-          name: `Cliente Intelectus QI ${randomId}`,
-          email: `cliente${randomId}@intelectusqi.com`,
-          cpfCnpj: '21528701026' // CPF Válido
-        },
-        {
-          headers: { access_token: ASAAS_API_KEY }
-        }
-      );
-      customerId = customerResponse.data.id;
-    } catch (custErr) {
-      // Caso haja restrição, procura um cliente já existente na conta
-      const searchResponse = await axios.get(`${ASAAS_API_URL}/customers?limit=1`, {
+    const randomId = Date.now();
+    const cpfGerado = gerarCPFValido();
+
+    // 1. Criar cliente automático com CPF válido gerado
+    const customerResponse = await axios.post(
+      `${ASAAS_API_URL}/customers`,
+      {
+        name: `Cliente Intelectus QI ${randomId}`,
+        email: `cliente_${randomId}@intelectusqi.com`,
+        cpfCnpj: cpfGerado
+      },
+      {
         headers: { access_token: ASAAS_API_KEY }
-      });
-      if (searchResponse.data.data && searchResponse.data.data.length > 0) {
-        customerId = searchResponse.data.data[0].id;
-      } else {
-        throw custErr;
       }
-    }
+    );
+
+    const customerId = customerResponse.data.id;
 
     // 2. Criar a cobrança PIX
     const cobrancaResponse = await axios.post(
